@@ -40,8 +40,9 @@ public class YPImagePicker: UINavigationController {
 
     /// Callbacks to the user
     public var didCancel: (() -> Void)?
-    public var didSelectImage: ((UIImage) -> Void)?
-    public var didSelectVideo: ((Data, UIImage, URL) -> Void)?
+    public var didSelectMediaItems: (([YPMediaItem]) -> Void)?
+//    public var didSelectImage: ((UIImage) -> Void)?
+//    public var didSelectVideo: ((Data, UIImage, URL) -> Void)?
     
     private let loadingContainerView: UIView = {
         let view = UIView()
@@ -103,14 +104,25 @@ public class YPImagePicker: UINavigationController {
         setupActivityIndicator()
         navigationBar.isTranslucent = false
         
-        picker.didSelectImage = { [unowned self] pickedImage, isNewPhoto in
+//        picker.didSelectMediaItem = { mediaItem in
+//            if let video = mediaItem.video, let videoURL = video.url {
+//            }
+//        }
+        
+        picker.didSelectMediaItem = { mediaItem in //{ [unowned self] pickedImage, isNewPhoto in
+            guard let pickedImage = mediaItem.photo?.image else {
+                return
+            }
+            let isNewPhoto = mediaItem.source == .camera
+            
             if self.configuration.showsFilters {
                 let filterVC = YPFiltersVC(image: pickedImage, configuration: self.configuration)
                 filterVC.didSelectImage = { filteredImage, isImageFiltered in
                     
                     let completion = { (image: UIImage) in
-                        self.didSelectImage?(image)
-                        let mediaItem = YPMediaItem(type: .photo, photo: YPPhoto(image: image), video: nil)
+//                        self.didSelectImage?(image)
+                        let mediaItem =  YPMediaItem(photo: YPPhoto(image: image), source: mediaItem.source)
+                        self.didSelectMediaItems?([mediaItem])
                         self.configuration.delegate?.imagePicker(self, didSelect: [mediaItem])
                         
                         if (isNewPhoto || isImageFiltered) && self.configuration.shouldSaveNewPicturesToAlbum {
@@ -139,8 +151,11 @@ public class YPImagePicker: UINavigationController {
                 self.pushViewController(filterVC, animated: false)
             } else {
                 let completion = { (image: UIImage) in
-                    self.didSelectImage?(image)
-                    let mediaItem = YPMediaItem(type: .photo, photo: YPPhoto(image: image), video: nil)
+//                    self.didSelectImage?(image)
+                    let photo = YPPhoto(image: image)
+
+                    let mediaItem = YPMediaItem(photo: photo, source: mediaItem.source)
+                    self.didSelectMediaItems?([mediaItem])
                     self.configuration.delegate?.imagePicker(self, didSelect: [mediaItem])
 
                     if isNewPhoto && self.configuration.shouldSaveNewPicturesToAlbum {
@@ -159,18 +174,25 @@ public class YPImagePicker: UINavigationController {
             }
         }
         
-        picker.didSelectVideo = { [unowned self] videoURL in
-            createVideoItem(videoURL: videoURL,
-                            activityIdicatorClosure: { _ in
-                                self.showHideActivityIndicator()
-            },
-                            configuration: self.configuration,
-                            completion: { video in
-                                self.didSelectVideo?(video.data!, video.thumbnail!, video.url!)
-                                
-                                let mediaItem = YPMediaItem(type: .video, photo: nil, video: video)
-                                self.configuration.delegate?.imagePicker(self, didSelect: [mediaItem])
-            })
+        picker.didSelectMediaItem = { mediaItem in
+            if let video = mediaItem.video, let videoURL = video.url {
+                createVideoItem(videoURL: videoURL,
+                                activityIdicatorClosure: { _ in
+                                    self.showHideActivityIndicator()
+                },
+                                configuration: self.configuration,
+                                completion: { video in
+//                                    self.didSelectVideo?(video.data!, video.thumbnail!, video.url!)
+                                    let mediaItem = YPMediaItem(video: video, source: mediaItem.source)
+                                    self.didSelectMediaItems?([mediaItem])
+                                    self.configuration.delegate?.imagePicker(self, didSelect: [mediaItem])
+                })
+            } else {
+                self.didSelectMediaItems?([mediaItem])
+                self.configuration.delegate?.imagePicker(self, didSelect: [mediaItem])
+            }
+            
+            
         }
         
         picker.didSelectMultipleItems = { items in

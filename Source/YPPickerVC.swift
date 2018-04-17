@@ -42,8 +42,7 @@ public class YPPickerVC: YPBottomPager, YPBottomPagerDelegate {
     
     /// Private callbacks to YPImagePicker
     public var didClose:(() -> Void)?
-    public var didSelectImage: ((UIImage, Bool) -> Void)?
-    public var didSelectVideo: ((URL) -> Void)?
+    public var didSelectMediaItem: ((YPMediaItem) -> Void)?
     public var didSelectMultipleItems: (([YPMediaItem]) -> Void)?
 
     enum Mode {
@@ -86,7 +85,9 @@ public class YPPickerVC: YPBottomPager, YPBottomPagerDelegate {
         if configuration.screens.contains(.photo) {
             cameraVC = YPCameraVC(configuration: configuration)
             cameraVC?.didCapturePhoto = { [unowned self] img in
-                self.didSelectImage?(img, true)
+                let photo = YPPhoto(image: img)
+                let photoMedia = YPMediaItem(photo: photo, source: .camera)
+                self.didSelectMediaItem?(photoMedia)
             }
         }
         
@@ -94,7 +95,9 @@ public class YPPickerVC: YPBottomPager, YPBottomPagerDelegate {
         if configuration.screens.contains(.video) {
             videoVC = YPVideoVC(configuration: configuration)
             videoVC?.didCaptureVideo = { [unowned self] videoURL in
-                self.didSelectVideo?(videoURL)
+                let video = YPVideo(data: nil, thumbnail: nil, videoURL: videoURL)
+                let videoMedia = YPMediaItem(video: video, source: .camera)
+                self.didSelectMediaItem?(videoMedia)
             }
         }
     
@@ -313,9 +316,13 @@ public class YPPickerVC: YPBottomPager, YPBottomPagerDelegate {
         if mode == .library {
             libraryVC.doAfterPermissionCheck { [weak self] in
                     libraryVC.selectedMedia(photoCallback: { img in
-                        self?.didSelectImage?(img, false)
+                        let photo = YPPhoto(image: img)
+                        let photoMedia = YPMediaItem(photo: photo, source: .library)
+                        self?.didSelectMediaItem?(photoMedia)
                     }, videoCallback: { videoURL in
-                        self?.didSelectVideo?(videoURL)
+                        let video = YPVideo(data: nil, thumbnail: nil, videoURL: videoURL)
+                        let videoMedia = YPMediaItem(video: video, source: .library)
+                        self?.didSelectMediaItem?(videoMedia)
                     }, multipleItemsCallback: { items in
                         self?.libraryViewFinishedLoadingImage()
                         self?.didSelectMultipleItems?(items)

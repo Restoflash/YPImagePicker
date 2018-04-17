@@ -16,6 +16,11 @@ public enum YPMediaType {
     case video
 }
 
+public enum YPMediaSource {
+    case library
+    case camera
+}
+
 public protocol YPMedia {
     var type: YPMediaType { get }
 }
@@ -43,17 +48,24 @@ public class YPVideo: YPMedia {
 }
 
 public struct YPMediaItem: YPMedia {
-    public var type: YPMediaType
     
+    public var type: YPMediaType
+    public var source: YPMediaSource
     public var photo: YPPhoto?
     public var video: YPVideo?
     
-    public init(type: YPMediaType,
-         photo: YPPhoto?,
-         video: YPVideo?) {
-        self.type = type
+    public init(photo: YPPhoto,
+                source: YPMediaSource) {
+        self.type = .photo
         self.photo = photo
+        self.source = source
+    }
+    
+    public init(video: YPVideo,
+                source: YPMediaSource) {
+        self.type = .video
         self.video = video
+        self.source = source
     }
 }
 

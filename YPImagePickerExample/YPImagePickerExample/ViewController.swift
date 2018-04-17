@@ -105,7 +105,7 @@ class ViewController: UIViewController {
         
         config.maxNumberOfItems = 5
         
-        config.delegate = self
+//        config.delegate = self
         
         // Set it the default conf for all Pickers
               YPImagePicker.setDefaultConfiguration(config)
@@ -116,30 +116,49 @@ class ViewController: UIViewController {
         let picker = YPImagePicker(configuration: config)
         
         // unowned is Mandatory since it would create a retain cycle otherwise :)
-        picker.didSelectImage = { [unowned picker] img in
-            // image picked
-            print(img.size)
-            self.imageView.image = img
-            picker.dismiss(animated: true, completion: nil)
-        }
-        picker.didSelectVideo = { [unowned picker] videoData, videoThumbnailImage, url in
-            // video picked
-            self.imageView.image = videoThumbnailImage
+//        picker.didSelectImage = { [unowned picker] img in
+//            // image picked
+//            print(img.size)
+//            self.imageView.image = img
+//            picker.dismiss(animated: true, completion: nil)
+//        }
+//        picker.didSelectVideo = { [unowned picker] videoData, videoThumbnailImage, url in
+//            // video picked
+//            self.imageView.image = videoThumbnailImage
+//            picker.dismiss(animated: true, completion: nil)
+//        }
+        picker.didSelectMediaItems = { [unowned picker] mediaItems in
+            for mediaItem in mediaItems {
+                print("🧀 \(mediaItem.type)")
+                print("🧀 \(mediaItem.source)")
+                
+                if let photo = mediaItem.photo {
+                    print("Selected photo \(photo)")
+                    self.imageView.image = photo.image
+                } else if let video = mediaItem.video {
+                    print("Selected video \(video)")
+                    self.imageView.image = video.thumbnail
+                }
+                
+            }
             picker.dismiss(animated: true, completion: nil)
         }
         picker.didCancel = {
             print("Did Cancel")
         }
+        
         present(picker, animated: true, completion: nil)
     }
 }
 
 extension ViewController: YPImagePickerDelegate {
+    
     func imagePicker(_ imagePicker: YPImagePicker, didSelect items: [YPMediaItem]) {
         imagePicker.dismiss(animated: true, completion: nil)
 
         print("🧀 \(items)")
         print("--------")
         _ = items.map { print("🧀 \($0.type)") }
+        _ = items.map { print("🧀 \($0.source)") }
     }
 }
